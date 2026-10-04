@@ -18,7 +18,7 @@ export default function App() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6">
         <div className="flex items-center gap-3">
-          <img src="/favicon.svg" className="h-10 w-10 border-2 border-tar" alt="" />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} className="h-10 w-10 border-2 border-tar" alt="" />
           <span className="text-2xl font-bold tracking-tight">sep7-pay</span>
         </div>
         <nav className="flex gap-2">
