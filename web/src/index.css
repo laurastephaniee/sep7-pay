@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-volt: #ffe14d;
+  --color-paper: #fffdf2;
+  --color-tar: #0d0d0d;
+  --color-graphite: #3a3a3a;
+  --color-signal: #ff4f2b;
+  --color-leaf: #12805c;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+body { background: var(--color-volt); color: var(--color-tar); font-family: var(--font-sans); }
+
+@layer components {
+  .slab { background: var(--color-paper); border: 3px solid var(--color-tar); box-shadow: 6px 6px 0 var(--color-tar); }
+  .entry { width: 100%; border: 2px solid var(--color-tar); background: #fff; padding: .55rem .7rem; font-size: .9rem; }
+  .entry:focus { outline: none; box-shadow: 3px 3px 0 var(--color-tar); }
+  .entry.bad { border-color: var(--color-signal); }
+  .press { border: 2px solid var(--color-tar); padding: .55rem 1rem; font-weight: 700; background: #fff; box-shadow: 3px 3px 0 var(--color-tar); }
+  .press:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--color-tar); }
+  .press-dark { background: var(--color-tar); color: var(--color-volt); }
+  .lbl { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+}
