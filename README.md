@@ -95,6 +95,12 @@ npm test          # 32 tests (library + CLI)
 npm run lint && npm run typecheck && npm run build
 ```
 
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Recipes](docs/recipes.md)
+- [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Changelog](CHANGELOG.md)
+
 ## Glossary (new to Stellar?)
 
 - **SEP-7**: a Stellar Ecosystem Proposal defining `web+stellar:` links so
