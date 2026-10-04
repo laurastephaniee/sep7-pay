@@ -95,6 +95,25 @@ npm test          # 32 tests (library + CLI)
 npm run lint && npm run typecheck && npm run build
 ```
 
+## Web app
+
+![sep7-pay web app](docs/assets/web-app.png)
+
+A payment-link studio at `web/`, built on this library:
+
+- **Make a link**: destination, amount (or let the payer choose), XLM / USDC / any asset, memo with type, a message and testnet toggle. Every field is validated live, with the error shown on the field that caused it.
+- A live **QR code**, the exact URI, **copy**, **download SVG** and **open in wallet**.
+- **Inspect a link**: paste any `web+stellar:` URI to see whether it's valid and what it asks for, and verify a signed request against the origin's signing key.
+
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:5173
+```
+
+The app imports the library straight from `../src`, so the browser and the CLI
+share one implementation. `netlify.toml` at the repo root deploys it as-is.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
