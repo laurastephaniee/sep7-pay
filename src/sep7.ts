@@ -295,3 +295,13 @@ export function verifyUri(uri: string, signingKey: string): boolean {
     return false;
   }
 }
+
+/**
+ * SEP-29: accounts that need a memo to credit a payment (typically exchange
+ * deposit addresses) publish the data entry `config.memo_required` = "1".
+ * Pass the account JSON from Horizon's /accounts/:id.
+ */
+export function memoRequired(account: { data?: Record<string, string> } | null | undefined): boolean {
+  const value = account?.data?.["config.memo_required"];
+  return value !== undefined && Buffer.from(value, "base64").toString() === "1";
+}

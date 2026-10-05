@@ -162,3 +162,13 @@ describe("request signing", () => {
     expect(verifyUri(buildUri(pay()), signer.publicKey())).toBe(false);
   });
 });
+
+describe("memoRequired (SEP-29)", () => {
+  it("reads config.memo_required from Horizon account data", async () => {
+    const { memoRequired } = await import("./sep7.js");
+    expect(memoRequired({ data: { "config.memo_required": Buffer.from("1").toString("base64") } })).toBe(true);
+    expect(memoRequired({ data: { "config.memo_required": Buffer.from("0").toString("base64") } })).toBe(false);
+    expect(memoRequired({ data: {} })).toBe(false);
+    expect(memoRequired(null)).toBe(false);
+  });
+});
