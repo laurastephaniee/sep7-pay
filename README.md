@@ -88,6 +88,7 @@ sep7-pay verify "<signed uri>" --key G…SIGNING_KEY [--json]
 | `validate(request)` | Throw on the first problem, without building |
 | `signUri(request, originDomain, keypair)` | Return a signed URI |
 | `verifyUri(uri, signingKey)` | Check a signed URI |
+| `memoRequired(horizonAccount)` | SEP-29: whether an account (e.g. an exchange deposit address) needs a memo |
 | `toQrSvg(uri)` / `toQrTerminal(uri)` | Render a QR code |
 | `Sep7Error` | Error type with a `field` property |
 
