@@ -53,6 +53,42 @@ describe("buildUri / parseUri", () => {
     };
     expect(parseUri(buildUri(request))).toEqual(request);
   });
+
+  it("round-trips a tx request with replace", () => {
+    const tx = new TransactionBuilder(new Account(DEST, "1"), {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(Operation.payment({ destination: ISSUER, asset: Asset.native(), amount: "1" }))
+      .setTimeout(300)
+      .build();
+    const request = {
+      operation: "tx" as const,
+      xdr: tx.toXDR(),
+      replace: "sourceAccount:X,operations[0].destination:Y;X:account paying the fee,Y:who gets paid",
+      networkPassphrase: Networks.TESTNET,
+    };
+    const uri = buildUri(request);
+    expect(uri).toContain("&replace=sourceAccount%3AX");
+    expect(parseUri(uri)).toEqual(request);
+  });
+
+  it("rejects malformed replace values with a field-specific error", () => {
+    const tx = new TransactionBuilder(new Account(DEST, "1"), { fee: "100", networkPassphrase: Networks.TESTNET })
+      .addOperation(Operation.payment({ destination: ISSUER, asset: Asset.native(), amount: "1" }))
+      .setTimeout(300)
+      .build();
+    const bad = (replace: string) => () =>
+      buildUri({ operation: "tx", xdr: tx.toXDR(), networkPassphrase: Networks.TESTNET, replace });
+    for (const value of ["sourceAccount:X", "sourceAccount:X;", "source Account:X;X:fee", "sourceAccount:X;Y:other"]) {
+      expect(bad(value)).toThrowError(Sep7Error);
+      try {
+        bad(value)();
+      } catch (e) {
+        expect((e as Sep7Error).field).toBe("replace");
+      }
+    }
+  });
 });
 
 describe("validation", () => {
