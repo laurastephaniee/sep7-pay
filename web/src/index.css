@@ -22,3 +22,27 @@ body { background: var(--color-volt); color: var(--color-tar); font-family: var(
   .press-dark { background: var(--color-tar); color: var(--color-volt); }
   .lbl { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 }
+
+/* "Print card": print only the QR, amount and link. */
+@media print {
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-card,
+  .print-card * {
+    visibility: visible;
+  }
+  .print-card {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    height: max-content;
+    box-shadow: none;
+  }
+  .print-card .no-print {
+    display: none;
+  }
+}

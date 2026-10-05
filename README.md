@@ -68,11 +68,15 @@ label `stellar.sep.7 - URI Scheme`, then the URI without its signature.
 ## CLI
 
 ```bash
-npx sep7-pay pay --to GBRP… --amount 10 --msg "Coffee" --qr          # QR in the terminal
-npx sep7-pay pay --to GBRP… --amount 99 --asset USDC:GA5Z… --svg invoice.svg
-npx sep7-pay pay --to GBRP… --testnet --callback https://shop.example/hook
-npx sep7-pay parse "web+stellar:pay?destination=GBRP…&amount=3"
-npx sep7-pay verify "<signed uri>" --key G…SIGNING_KEY
+# not published to npm yet: install from source
+git clone https://github.com/laurastephaniee/sep7-pay && cd sep7-pay
+npm install && npm run build && npm link   # puts `sep7-pay` on your PATH
+
+sep7-pay pay --to GBRP… --amount 10 --msg "Coffee" --qr          # QR in the terminal
+sep7-pay pay --to GBRP… --amount 99 --asset USDC:GA5Z… --svg invoice.svg
+sep7-pay pay --to GBRP… --testnet --callback https://shop.example/hook
+sep7-pay parse "web+stellar:pay?destination=GBRP…&amount=3"
+sep7-pay verify "<signed uri>" --key G…SIGNING_KEY [--json]
 ```
 
 ## API
@@ -98,6 +102,10 @@ npm run lint && npm run typecheck && npm run build
 ## Web app
 
 ![sep7-pay web app](docs/assets/web-app.png)
+
+The site has three pages: **Home** (what it does, with live testnet data), **App** (the tool itself) and **Docs** (getting started, concepts, reference and FAQ).
+
+![sep7-pay app page](docs/assets/web-app-page.png)
 
 A payment-link studio at `web/`, built on this library:
 

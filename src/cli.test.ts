@@ -25,6 +25,12 @@ describe("cli", () => {
     expect(output).toContain("network_passphrase=Test%20SDF%20Network");
   });
 
+  it("verify --json prints a machine-readable result and fails on bad signatures", async () => {
+    const { code, output } = await cli("verify", `web+stellar:pay?destination=${DEST}`, "--key", ISSUER, "--json");
+    expect(code).toBe(1);
+    expect(JSON.parse(output)).toEqual({ valid: false, key: ISSUER });
+  });
+
   it("parses a URI to JSON", async () => {
     const { code, output } = await cli("parse", `web+stellar:pay?destination=${DEST}&amount=3`);
     expect(code).toBe(0);

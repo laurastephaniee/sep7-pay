@@ -11,7 +11,8 @@ Usage:
                [--msg "Invoice #42"] [--callback https://…] [--testnet]
                [--qr] [--svg out.svg]
   sep7-pay parse <uri>                 print a URI's fields as JSON
-  sep7-pay verify <uri> --key <G…>     check a signed URI against a signing key
+  sep7-pay verify <uri> --key <G…> [--json]
+                                       check a signed URI against a signing key
 
 Examples:
   sep7-pay pay --to GABC… --amount 10 --msg "Coffee" --qr
@@ -35,12 +36,12 @@ export async function run(argv: string[], out: (line: string) => void = console.
       case "verify": {
         const { values, positionals } = parseArgs({
           args: rest,
-          options: { key: { type: "string" } },
+          options: { key: { type: "string" }, json: { type: "boolean", default: false } },
           allowPositionals: true,
         });
         if (!positionals[0] || !values.key) throw new Sep7Error("verify needs <uri> --key <G…>");
         const ok = verifyUri(positionals[0], values.key);
-        out(ok ? "valid signature" : "INVALID signature");
+        out(values.json ? JSON.stringify({ valid: ok, key: values.key }) : ok ? "valid signature" : "INVALID signature");
         return ok ? 0 : 1;
       }
       case undefined:

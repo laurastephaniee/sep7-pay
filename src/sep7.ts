@@ -33,6 +33,11 @@ export interface TxRequest {
   operation: "tx";
   /** Base64 transaction envelope for the wallet to sign. */
   xdr: string;
+  /**
+   * Fields the wallet should fill in before signing (SEP-11 Txrep paths),
+   * e.g. "sourceAccount:X;X:account paying the fee".
+   */
+  replace?: string;
   callback?: string;
   pubkey?: string;
   msg?: string;
@@ -71,6 +76,7 @@ const PAY_PARAMS: [keyof PayRequest, string][] = [
 
 const TX_PARAMS: [keyof TxRequest, string][] = [
   ["xdr", "xdr"],
+  ["replace", "replace"],
   ["callback", "callback"],
   ["pubkey", "pubkey"],
   ["msg", "msg"],
@@ -159,6 +165,39 @@ function validateTx(r: TxRequest): void {
   if (r.pubkey !== undefined && !StrKey.isValidEd25519PublicKey(r.pubkey)) {
     throw new Sep7Error("pubkey must be a G… address", "pubkey");
   }
+  if (r.replace !== undefined) validateReplace(r.replace);
+}
+
+const TXREP_PATH = /^[A-Za-z][A-Za-z0-9_]*(\[\d+\])?(\.[A-Za-z][A-Za-z0-9_]*(\[\d+\])?)*$/;
+const REF = /^[A-Za-z0-9_]+$/;
+
+/**
+ * `replace` is "<path>:<ref>,…;<ref>:<hint>,…". Every ref used by a path needs a hint
+ * so the wallet can tell the user what it is filling in.
+ */
+function validateReplace(replace: string): void {
+  const fail = (why: string): never => {
+    throw new Sep7Error(`replace ${why}`, "replace");
+  };
+  const semi = replace.indexOf(";");
+  if (semi === -1) fail('must look like "path:ref,…;ref:hint,…"');
+  const pairs = (s: string) => s.split(",").map((p) => p.trim()).filter(Boolean);
+  const refs = new Set<string>();
+  for (const part of pairs(replace.slice(0, semi))) {
+    const [path, ref, extra] = part.split(":");
+    if (extra !== undefined || !path || !ref) fail(`has a malformed field "${part}"`);
+    if (!TXREP_PATH.test(path)) fail(`has an invalid Txrep path "${path}"`);
+    if (!REF.test(ref)) fail(`has an invalid reference "${ref}"`);
+    refs.add(ref);
+  }
+  if (refs.size === 0) fail("lists no fields to replace");
+  const hinted = new Set<string>();
+  for (const part of pairs(replace.slice(semi + 1))) {
+    const colon = part.indexOf(":");
+    if (colon <= 0 || colon === part.length - 1) fail(`has a malformed hint "${part}"`);
+    hinted.add(part.slice(0, colon));
+  }
+  for (const ref of refs) if (!hinted.has(ref)) fail(`has no hint for "${ref}"`);
 }
 
 /** Validates and serialises a request into a `web+stellar:` URI. */
