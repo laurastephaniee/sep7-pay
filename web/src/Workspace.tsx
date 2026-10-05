@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Networks } from "@stellar/stellar-sdk";
-import { buildUri, parseUri, Sep7Error, verifyUri, type MemoType, type PayRequest, type Sep7Request } from "../../src/sep7";
+import { Networks, StrKey } from "@stellar/stellar-sdk";
+import { buildUri, memoRequired, parseUri, Sep7Error, verifyUri, type MemoType, type PayRequest, type Sep7Request } from "../../src/sep7";
 import { toQrSvg } from "../../src/qr";
 
 const ASSETS: Record<string, { code?: string; issuer?: string; label: string }> = {
@@ -34,7 +34,7 @@ export function Workspace() {
           market stall. Everything is validated before your customer sees it.
         </p>
       </section>
-      <main className="mx-auto max-w-6xl px-5 pb-16">{tab === "build" ? <Builder /> : <Inspector />}</main>
+      <div className="mx-auto max-w-6xl px-5 pb-16">{tab === "build" ? <Builder /> : <Inspector />}</div>
     </div>
   );
 }
@@ -107,9 +107,18 @@ function Builder() {
     if (amount) req.amount = amount.trim();
     const a = ASSETS[asset];
     if (asset === "custom") {
-      if (code || issuer) (req.assetCode = code.trim()), (req.assetIssuer = issuer.trim());
-    } else if (a.code) (req.assetCode = a.code), (req.assetIssuer = a.issuer);
-    if (memo) (req.memo = memo), (req.memoType = memoType);
+      if (code || issuer) {
+        req.assetCode = code.trim();
+        req.assetIssuer = issuer.trim();
+      }
+    } else if (a.code) {
+      req.assetCode = a.code;
+      req.assetIssuer = a.issuer;
+    }
+    if (memo) {
+      req.memo = memo;
+      req.memoType = memoType;
+    }
     if (msg) req.msg = msg;
     if (testnet) req.networkPassphrase = Networks.TESTNET;
     try {
@@ -125,6 +134,23 @@ function Builder() {
   }, [result.uri]);
 
   const err = (f: string) => (result.error?.field === f && destination ? result.error.message : null);
+
+  // SEP-29: exchange deposit addresses flag that payments need a memo.
+  const [needsMemo, setNeedsMemo] = useState(false);
+  useEffect(() => {
+    const dest = destination.trim();
+    setNeedsMemo(false);
+    if (!StrKey.isValidEd25519PublicKey(dest)) return;
+    const horizon = testnet ? "https://horizon-testnet.stellar.org" : "https://horizon.stellar.org";
+    let live = true;
+    fetch(`${horizon}/accounts/${dest}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((account) => live && setNeedsMemo(memoRequired(account)))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [destination, testnet]);
   const save = (href: string, name: string) => {
     const a = document.createElement("a");
     a.href = href;
@@ -178,6 +204,12 @@ function Builder() {
               <input className="entry font-mono text-xs" value={issuer} onChange={(e) => setIssuer(e.target.value)} />
             </Field>
           </div>
+        )}
+        {needsMemo && !memo.trim() && (
+          <p className="border-2 border-signal bg-white p-3 text-sm font-bold text-signal" role="alert">
+            This account requires a memo (it sets SEP-29 config.memo_required, as exchanges do). Without one, a payment may
+            never be credited. Add the memo the recipient gave you.
+          </p>
         )}
         <div className="grid grid-cols-[1fr_160px] gap-4">
           <Field label="Memo (invoice no., reference…)" error={err("memo")}>
