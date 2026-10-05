@@ -1,4 +1,5 @@
-import { Link, useTitle } from "../lib/router";
+import { useEffect } from "react";
+import { Link, useSection, useTitle } from "../lib/router";
 
 const SECTIONS = [
   ["start", "Getting started"],
@@ -9,23 +10,19 @@ const SECTIONS = [
 
 export function Docs() {
   useTitle("Docs · sep7-pay");
+  const section = useSection();
+  useEffect(() => {
+    if (section) document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
+  }, [section]);
   return (
     <div className="mx-auto grid max-w-6xl gap-12 px-5 py-14 lg:grid-cols-[210px_1fr]">
       <aside className="hidden lg:block">
         <nav className="sticky top-24 space-y-1 text-sm">
           <p className="mb-3 px-3 lbl text-signal">On this page</p>
           {SECTIONS.map(([id, label]) => (
-            <a
-              key={id}
-              href="#/docs"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="block rounded-lg px-3 py-2 border-transparent text-tar hover:border-tar"
-            >
+            <Link key={id} to={`/docs/${id}`} className="block rounded-lg px-3 py-2 border-transparent text-tar hover:border-tar">
               {label}
-            </a>
+            </Link>
           ))}
         </nav>
       </aside>
@@ -65,11 +62,15 @@ export function Docs() {
         <section id="reference" className="scroll-mt-24 space-y-5">
           <h2 className="text-3xl font-bold tracking-tight text-tar">Library & CLI</h2>
           <p className="text-graphite">Use the CLI from a terminal, or the same functions from the library:</p>
-          <pre className="overflow-x-auto p-5 font-mono text-xs leading-relaxed slab bg-tar text-volt">{`npx sep7-pay pay --to GBRP… --amount 10 --msg "Coffee" --qr          # QR in the terminal
-npx sep7-pay pay --to GBRP… --amount 99 --asset USDC:GA5Z… --svg invoice.svg
-npx sep7-pay pay --to GBRP… --testnet --callback https://shop.example/hook
-npx sep7-pay parse "web+stellar:pay?destination=GBRP…&amount=3"
-npx sep7-pay verify "<signed uri>" --key G…SIGNING_KEY`}</pre>
+          <pre className="overflow-x-auto p-5 font-mono text-xs leading-relaxed slab bg-tar text-volt">{`# not published to npm yet: install from source
+git clone https://github.com/laurastephaniee/sep7-pay && cd sep7-pay
+npm install && npm run build && npm link   # puts \`sep7-pay\` on your PATH
+
+sep7-pay pay --to GBRP… --amount 10 --msg "Coffee" --qr          # QR in the terminal
+sep7-pay pay --to GBRP… --amount 99 --asset USDC:GA5Z… --svg invoice.svg
+sep7-pay pay --to GBRP… --testnet --callback https://shop.example/hook
+sep7-pay parse "web+stellar:pay?destination=GBRP…&amount=3"
+sep7-pay verify "<signed uri>" --key G…SIGNING_KEY [--json]`}</pre>
           <div className="slab overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="border-b border-tar text-xs uppercase tracking-wider text-graphite">

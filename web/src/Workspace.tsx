@@ -49,16 +49,56 @@ function Field({ label, error, children }: { label: string; error?: string | nul
   );
 }
 
+// Merchants reuse the same destination and asset, so remember them in this browser.
+const SAVED_KEY = "sep7pay.builder";
+interface Saved {
+  destination: string;
+  asset: string;
+  code: string;
+  issuer: string;
+  memoType: MemoType;
+  testnet: boolean;
+}
+function loadSaved(): Partial<Saved> {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}") as Partial<Saved>;
+  } catch {
+    return {};
+  }
+}
+
 function Builder() {
-  const [destination, setDestination] = useState("");
+  const [saved] = useState(loadSaved);
+  const [destination, setDestination] = useState(saved.destination ?? "");
   const [amount, setAmount] = useState("25");
-  const [asset, setAsset] = useState("xlm");
-  const [code, setCode] = useState("");
-  const [issuer, setIssuer] = useState("");
+  const [asset, setAsset] = useState(saved.asset && saved.asset in ASSETS ? saved.asset : "xlm");
+  const [code, setCode] = useState(saved.code ?? "");
+  const [issuer, setIssuer] = useState(saved.issuer ?? "");
   const [memo, setMemo] = useState("");
-  const [memoType, setMemoType] = useState<MemoType>("MEMO_TEXT");
+  const [memoType, setMemoType] = useState<MemoType>(saved.memoType ?? "MEMO_TEXT");
   const [msg, setMsg] = useState("");
-  const [testnet, setTestnet] = useState(true);
+  const [testnet, setTestnet] = useState(saved.testnet ?? true);
+  useEffect(() => {
+    try {
+      const data: Saved = { destination, asset, code, issuer, memoType, testnet };
+      localStorage.setItem(SAVED_KEY, JSON.stringify(data));
+    } catch {
+      /* storage unavailable: nothing to remember */
+    }
+  }, [destination, asset, code, issuer, memoType, testnet]);
+  const forget = () => {
+    try {
+      localStorage.removeItem(SAVED_KEY);
+    } catch {
+      /* ignore */
+    }
+    setDestination("");
+    setAsset("xlm");
+    setCode("");
+    setIssuer("");
+    setMemoType("MEMO_TEXT");
+    setTestnet(true);
+  };
   const [svg, setSvg] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -85,11 +125,28 @@ function Builder() {
   }, [result.uri]);
 
   const err = (f: string) => (result.error?.field === f && destination ? result.error.message : null);
-  const download = () => {
+  const save = (href: string, name: string) => {
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-    a.download = "payment-qr.svg";
+    a.href = href;
+    a.download = name;
     a.click();
+  };
+  const download = () => save(URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" })), "payment-qr.svg");
+  // Print-friendly PNG: render the SVG onto a 1024px canvas with a white background.
+  const downloadPng = () => {
+    const img = new Image();
+    img.onload = () => {
+      const size = 1024;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, size, size);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, size, size);
+      save(canvas.toDataURL("image/png"), "payment-qr.png");
+    };
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   };
 
   return (
@@ -141,9 +198,15 @@ function Builder() {
           <input type="checkbox" checked={testnet} onChange={(e) => setTestnet(e.target.checked)} /> Testnet request
         </label>
         {result.error && destination && !result.error.field && <p className="font-bold text-signal">{result.error.message}</p>}
+        <p className="text-xs text-graphite">
+          Destination, asset and network are remembered in this browser.{" "}
+          <button type="button" className="font-bold underline" onClick={forget}>
+            Forget them
+          </button>
+        </p>
       </form>
 
-      <div className="slab flex flex-col items-center p-6">
+      <div className="slab print-card flex flex-col items-center p-6">
         {svg ? (
           <>
             <div className="w-full max-w-[300px] border-3 border-tar bg-white p-2" dangerouslySetInnerHTML={{ __html: svg }} />
@@ -151,8 +214,9 @@ function Builder() {
               {amount || "Any amount"} {asset === "custom" ? code : ASSETS[asset].code ?? "XLM"}
               {msg && ` · ${msg}`}
             </p>
+            {memo && <p className="text-center text-xs font-bold">Memo: {memo}</p>}
             <code className="mt-4 block w-full break-all border-2 border-tar bg-white p-3 font-mono text-xs">{result.uri}</code>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <div className="no-print mt-4 flex flex-wrap justify-center gap-2">
               <button
                 className="press press-dark"
                 onClick={() => navigator.clipboard.writeText(result.uri).then(() => (setCopied(true), setTimeout(() => setCopied(false), 1500)))}
@@ -160,7 +224,13 @@ function Builder() {
                 {copied ? "Copied ✓" : "Copy link"}
               </button>
               <button className="press" onClick={download}>
-                Download QR
+                SVG
+              </button>
+              <button className="press" onClick={downloadPng}>
+                PNG
+              </button>
+              <button className="press" onClick={() => window.print()}>
+                Print card
               </button>
               <a className="press" href={result.uri}>
                 Open in wallet
